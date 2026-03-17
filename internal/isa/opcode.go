@@ -6,6 +6,10 @@ type Opcode struct {
 	Type uint8
 }
 
+func (o Opcode) String() string {
+	return o.Name
+}
+
 const (
 	OP_ALU_REG_REG       = 0x00
 	OP_LD_REG_IMM        = 0x01
@@ -35,3 +39,19 @@ var (
 	OpJumpRel        = Opcode{Opc: OP_JUMP_REL, Name: "JUMP_REL", Type: OP_TYPE_3_REG}
 	OpCallRel        = Opcode{Opc: OP_CALL_REL, Name: "CALL_REL", Type: OP_TYPE_13_IMM}
 )
+
+var opcodeMap = map[uint8]Opcode{
+	OP_ALU_REG_REG:       OpAluRegReg,
+	OP_LD_REG_IMM:        OpLdRegImm,
+	OP_ALU_REG_IMM:       OpAluRegImm,
+	OP_REG_MEM:           OpRegMem,
+	OP_REG_MEM_IMM:       OpRegMemImm,
+	OP_JUMP_CALL_RET_REG: OpJumpCallRetReg,
+	OP_JUMP_REL:          OpJumpRel,
+	OP_CALL_REL:          OpCallRel,
+}
+
+func GetOpcode(opc uint8) Opcode {
+	opcode, _ := opcodeMap[opc]
+	return opcode
+}
