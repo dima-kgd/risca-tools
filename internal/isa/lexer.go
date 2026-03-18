@@ -2,9 +2,11 @@ package isa
 
 import (
 	"fmt"
+	"strings"
 )
 
 func Tokenize(input string) ([]Token, error) { // input line in uppercase, e.g. "ADD R1, R2"
+	input = strings.ToUpper(input)
 	var tokens []Token
 	pos := 0
 	for pos < len(input) {
@@ -21,13 +23,15 @@ func Tokenize(input string) ([]Token, error) { // input line in uppercase, e.g. 
 		} else if isComma(input, pos) {
 			tokens = append(tokens, Token{Type: TK_COMMA, TokenString: ","})
 			pos++
+		} else {
+			return nil, fmt.Errorf("Unexpeced symbol on pos %d: %c. %s>%s", pos, input[pos], input[:pos], input[pos:])
 		}
 	}
 	return tokens, nil
 }
 
 func isWord(input string, pos int) bool {
-	return input[pos] >= 'A' && input[pos] <= 'Z'
+	return (input[pos] >= 'A' && input[pos] <= 'Z') || (input[pos] == '.')
 }
 
 func isDigit(input string, pos int) bool {
