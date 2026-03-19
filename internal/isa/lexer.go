@@ -80,6 +80,14 @@ func getBracket(input string, pos int) (Token, int, bool) {
 	}
 }
 
+func getComma(input string, pos int) (Token, int, bool) {
+	if input[pos] == ',' {
+		pos++
+		return Token{T: TK_COMMA, Tk: ","}, pos, true
+	}
+	return Token{}, pos, false
+}
+
 func isWord(input string, pos int) bool {
 	return (input[pos] >= 'A' && input[pos] <= 'Z') || (input[pos] == '.')
 }
@@ -100,14 +108,6 @@ func isDigit(input string, pos int) bool {
 
 func isWhitespace(input string, pos int) bool {
 	return input[pos] == ' ' || input[pos] == '\t'
-}
-
-func getComma(input string, pos int) (Token, int, bool) {
-	if input[pos] == ',' {
-		pos++
-		return Token{T: TK_COMMA, Tk: ","}, pos, true
-	}
-	return Token{}, pos, false
 }
 
 func skipWhitespace(input string, pos int) int {

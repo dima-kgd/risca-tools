@@ -20,9 +20,14 @@ func (token Token) String() string {
 const (
 	TK_LD = iota
 	TK_ST
+	TK_LDI
 	TK_LD_BYTE
 	TK_LD_WORD
 	TK_LD_DWORD
+	TK_LD_0
+	TK_LD_1
+	TK_LD_2
+	TK_LD_3
 	TK_REG
 	TK_REG_SP
 	TK_REG_LR
@@ -35,6 +40,21 @@ const (
 	TK_R_SQBR
 	TK_PUSH
 	TK_POP
+
+	//control flow tokens
+	TK_JMP
+	TK_CALL
+	TK_RET
+	TK_DJNZ
+
+	//compare tokens
+	TK_EQ
+	TK_NE
+	TK_LS
+	TK_LE
+	TK_GT
+	TK_GE
+
 	TK_LABEL
 	TK_END_LINE
 )
@@ -42,9 +62,14 @@ const (
 var tokenTypeToString = map[uint8]string{
 	TK_LD:       "TK_LD",
 	TK_ST:       "TK_ST",
+	TK_LDI:      "TK_LDI",
 	TK_LD_BYTE:  "TK_LD_BYTE",
 	TK_LD_WORD:  "TK_LD_WORD",
 	TK_LD_DWORD: "TK_LD_DWORD",
+	TK_LD_0:     "TK_LD_0",
+	TK_LD_1:     "TK_LD_1",
+	TK_LD_2:     "TK_LD_2",
+	TK_LD_3:     "TK_LD_3",
 	TK_REG:      "TK_REG",
 	TK_REG_SP:   "TK_REG_SP",
 	TK_REG_LR:   "TK_REG_LR",
@@ -57,6 +82,18 @@ var tokenTypeToString = map[uint8]string{
 	TK_R_SQBR:   "TK_R_SQBR",
 	TK_PUSH:     "TK_PUSH",
 	TK_POP:      "TK_POP",
+	TK_JMP:      "TK_JMP",
+	TK_CALL:     "TK_CALL",
+	TK_RET:      "TK_RET",
+	TK_DJNZ:     "TK_DJNZ",
+
+	TK_EQ: "TK_EQ",
+	TK_NE: "TK_NE",
+	TK_LS: "TK_LS",
+	TK_LE: "TK_LE",
+	TK_GT: "TK_GT",
+	TK_GE: "TK_GE",
+
 	TK_LABEL:    "TK_LABEL",
 	TK_END_LINE: "TK_END_LINE",
 }
@@ -97,9 +134,14 @@ func GetRegisterNumber(reg string) (uint8, bool) {
 var mapWordToToken = map[string]uint8{
 	"LD":   TK_LD,
 	"ST":   TK_ST,
+	"LDI":  TK_LDI,
 	"LD.B": TK_LD_BYTE,
 	"LD.W": TK_LD_WORD,
 	"LD.D": TK_LD_DWORD,
+	"LD.0": TK_LD_0,
+	"LD.1": TK_LD_1,
+	"LD.2": TK_LD_2,
+	"LD.3": TK_LD_3,
 	"R0":   TK_REG,
 	"R1":   TK_REG,
 	"R2":   TK_REG,
@@ -130,6 +172,17 @@ var mapWordToToken = map[string]uint8{
 	"INT":  TK_ALU,
 	"PUSH": TK_PUSH,
 	"POP":  TK_POP,
+	"JMP":  TK_JMP,
+	"CALL": TK_CALL,
+	"RET":  TK_RET,
+	"DJNZ": TK_DJNZ,
+
+	"EQ": TK_EQ,
+	"NE": TK_NE,
+	"LS": TK_LS,
+	"LE": TK_LE,
+	"GT": TK_GT,
+	"GE": TK_GE,
 }
 
 func GetTokenTypeByWord(word string) (uint8, bool) {
