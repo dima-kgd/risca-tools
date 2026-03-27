@@ -1,2 +1,4 @@
 # risca-tools
-Tools for RiscA cpu.
+Build Tools for RiscA cpu. Included: assembler, disassembler and emulator.
+
+!In progress! Under construction!
