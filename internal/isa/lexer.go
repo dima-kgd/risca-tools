@@ -107,12 +107,16 @@ func isDigit(input string, pos int) bool {
 }
 
 func isWhitespace(input string, pos int) bool {
-	return input[pos] == ' ' || input[pos] == '\t'
+	return input[pos] == ' ' || input[pos] == '\t' || input[pos] == ';'
 }
 
 func skipWhitespace(input string, pos int) int {
-	for pos < len(input) && (input[pos] == ' ' || input[pos] == '\t') {
-		pos++
+	for pos < len(input) && (input[pos] == ' ' || input[pos] == '\t' || input[pos] == ';') {
+		if input[pos] == ';' { // Skip line comment
+			return len(input)
+		} else {
+			pos++
+		}
 	}
 	return pos
 }

@@ -12,6 +12,16 @@ func TestLexer_Tokenize(t *testing.T) {
 		expected []Token
 	}{
 		{
+			name:     "ld reg reg comment",
+			input:    "\tLD R9, R0; some comment",
+			expected: []Token{{T: TK_LD, Tk: "LD"}, {T: TK_REG, Tk: "R9"}, {T: TK_COMMA, Tk: ","}, {T: TK_REG, Tk: "R0"}},
+		},
+		{
+			name:     "full line comment",
+			input:    "; this is a comment",
+			expected: nil,
+		},
+		{
 			name:     "ldi reg label",
 			input:    "ldi r0 variable1",
 			expected: []Token{{T: TK_LDI, Tk: "LDI"}, {T: TK_REG, Tk: "R0"}, {T: TK_LABEL, Tk: "VARIABLE1"}},
