@@ -26,6 +26,12 @@ func (i Instruction) Pack() uint16 {
 		code |= uint16(i.Rs) << 13
 		code |= uint16(i.Ex) << 11
 		code |= uint16(i.Func5) << 6
+	case OP_TYPE_3_REG:
+		code |= uint16(i.Rd) << 3
+		code |= uint16(i.Rx) << 6
+		code |= uint16(i.Func2) << 9
+		code |= uint16(i.Ex) << 11
+		code |= uint16(i.Rs) << 13
 	case OP_TYPE_8_IMM_REG:
 		code |= uint16(i.Rd) << 3
 		code |= uint16(i.Func2) << 6
@@ -42,6 +48,34 @@ func (i Instruction) Pack() uint16 {
 	return code
 }
 
+func Parse(inst uint16) Instruction {
+	i := Instruction{}
+	i.Opcode = GetOpcode(uint8(inst) & 0b0000_0111)
+	switch i.Opcode.Type {
+	case OP_TYPE_2_REG:
+		i.Rd = getRd(inst)
+		i.Rs = getRs(inst)
+		i.Func5 = getFunc5(inst)
+		i.Ex = getEx(inst)
+	case OP_TYPE_3_REG:
+		i.Rd = getRd(inst)
+		i.Rx = getRx(inst)
+		i.Func2 = getFunc22(inst)
+		i.Ex = getEx(inst)
+		i.Rs = getRs(inst)
+	case OP_TYPE_8_IMM_REG:
+		i.Rd = getRd(inst)
+		i.Func2 = getFunc2(inst)
+		i.Imm = int16(getImm8(inst))
+	case OP_TYPE_7_IMM_REG:
+		i.Rd = getRd(inst)
+		i.Func3 = getFunc3(inst)
+		i.Imm = int16(getImm7(inst))
+		//TODO:
+	}
+	return i
+}
+
 func (i Instruction) makeEx(bankd, banks uint8) Instruction {
 	i.Ex = (banks << 1) | bankd
 	return i
@@ -55,6 +89,10 @@ func getRs(inst uint16) uint8 {
 	return uint8(inst>>13) & 0b0000_0111
 }
 
+func getRx(inst uint16) uint8 {
+	return uint8(inst>>6) & 0b0000_0111
+}
+
 func getFunc5(inst uint16) uint8 {
 	return uint8(inst>>6) & 0b0001_1111
 }
@@ -63,8 +101,14 @@ func getFunc3(inst uint16) uint8 {
 	return uint8(inst>>6) & 0b0000_0111
 }
 
+//8 bit immediate operations
 func getFunc2(inst uint16) uint8 {
 	return uint8(inst>>6) & 0b0000_0011
+}
+
+//3 register operations
+func getFunc22(inst uint16) uint8 {
+	return uint8(inst>>9) & 0b0000_0011
 }
 
 func getEx(inst uint16) uint8 {
@@ -77,28 +121,6 @@ func getImm8(inst uint16) int16 {
 
 func getImm7(inst uint16) int16 {
 	return int16(int8(inst>>8) >> 1)
-}
-
-func Parse(inst uint16) Instruction {
-	i := Instruction{}
-	i.Opcode = GetOpcode(uint8(inst) & 0b0000_0111)
-	switch i.Opcode.Type {
-	case OP_TYPE_3_REG:
-		i.Rd = getRd(inst)
-		i.Rs = getRs(inst)
-		i.Func5 = getFunc5(inst)
-		i.Ex = getEx(inst)
-	case OP_TYPE_8_IMM_REG:
-		i.Rd = getRd(inst)
-		i.Func2 = getFunc2(inst)
-		i.Imm = int16(getImm8(inst))
-	case OP_TYPE_7_IMM_REG:
-		i.Rd = getRd(inst)
-		i.Func3 = getFunc3(inst)
-		i.Imm = int16(getImm7(inst))
-		//TODO:
-	}
-	return i
 }
 
 var mapFunc5ToAluRegReg = map[uint8]string{
@@ -205,6 +227,14 @@ func (i Instruction) String() string {
 			return fmt.Sprintf("%s\tR%d, 0x%02X(%d) -> %08X", operand, rdBanked, uint8(i.Imm), i.Imm, uint32(int32(i.Address)+int32(i.Imm<<1)))
 		default:
 			return fmt.Sprintf("%s\tR%d, 0x%02X(%d)", operand, rdBanked, uint8(imm), imm)
+		}
+	case OP_JUMP_REL:
+		if i.Rd == 0 { //JMP PC+IMM
+			offset := int16(i.Rs)<<7 | int16(i.Ex)<<5 | int16(i.Func2)<<3 | int16(i.Rx)
+			address := uint32(int32(i.Address) + int32(offset<<1))
+			return fmt.Sprintf("JMP 0x%04X(%d) -> %08X", uint16(offset), offset, address)
+		} else {
+			//TODO:
 		}
 		//TODO:
 	}

@@ -33,7 +33,7 @@ func main() {
 		}
 		instr := isa.Parse(instrBin)
 		instr.Address = curAddr
-		fmt.Printf("0x%08x 0x%04X %s\n", curAddr, instrBin, instr)
+		fmt.Printf("0x%08X 0x%04X %s\n", curAddr, instrBin, instr)
 		curAddr += 2
 	}
 }

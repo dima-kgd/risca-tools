@@ -10,6 +10,7 @@ const (
 	Equ
 	EvalConst
 	DefineDBVar
+	JmpRel
 )
 
 type Rule struct {
@@ -26,6 +27,7 @@ var aluRegImmSyntax = [][]uint8{{TK_ALU, TK_LDI, TK_DJNZ}, {TK_REG}, {TK_COMMA},
 var constEquSyntax = [][]uint8{{TK_LABEL}, {TK_EQU}, {TK_NUMBER}}
 var evalConstSyntax = [][]uint8{{TK_BUCKS}, {TK_LABEL}}
 var defineVarSyntax = [][]uint8{{TK_LABEL}, {TK_DB}, {TK_NUMBER, TK_STRING}}
+var jmpRelSyntax = [][]uint8{{TK_JMP}, {TK_NUMBER, TK_LABEL}}
 
 var syntaxRules = []Rule{
 	{Type: Equ, Syntax: constEquSyntax, Opcode: GetOpcode(OP_ALU_REG_IMM), ParseFunc: parseConstEqu},
@@ -35,6 +37,7 @@ var syntaxRules = []Rule{
 	{Type: RuleALURegReg, Syntax: aluRegRegSyntax, Opcode: GetOpcode(OP_ALU_REG_REG), ParseFunc: parseAluRegReg},
 	{Type: LdRegImm, Syntax: ldRegImmSyntax, Opcode: GetOpcode(OP_LD_REG_IMM), ParseFunc: parseLdRegImm},
 	{Type: AluRegImm, Syntax: aluRegImmSyntax, Opcode: GetOpcode(OP_ALU_REG_IMM), ParseFunc: parseAluRegImm},
+	{Type: JmpRel, Syntax: jmpRelSyntax, Opcode: GetOpcode(OP_JUMP_REL), ParseFunc: parseJmpRel},
 }
 
 func parseRegister(tokenrd string) (uint8, uint8, error) {
@@ -159,7 +162,7 @@ func parseLdRegImm(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]T
 //
 // 0) ADD/SUB: Rd = Rd + (signed(IMM))
 // 1) SHL/SHR: Rd = << or >> signed(IMM & 31)
-// 2) LDI Rd = [PC - IMM]; 32 bit constant loading, IMM in 32 bit dword (-512 ... 0 bytes)
+// 2) 2) LDI Rd = PC - IMM; get 32 bit address relative to PC, IMM in instructions (-128 ... 0 instructions)
 // 3) DJNZ Rd, PC + signed(IMM); Rd-- if not zero, jump taken. IMM in instructions (-64 ... +63 instructions)
 func parseAluRegImm(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Token, error) {
 	var rd, bankd, func3 uint8
@@ -214,6 +217,28 @@ func parseAluRegImm(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]
 	return tokens, nil
 }
 
+func parseJmpRel(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Token, error) {
+	immT := tokens[tokenpos+1]
+	instr := Instruction{}
+	instr.Rd = 0
+	if immT.T == TK_LABEL {
+		instr.Label = immT.Tk
+	} else {
+		instr.Rs = uint8(immT.ValInt >> 7)
+		instr.Ex = uint8(immT.ValInt>>5) & 0b0000_0011
+		instr.Func2 = uint8(immT.ValInt>>3) & 0b0000_0011
+		instr.Rx = uint8(immT.ValInt) & 0b0000_0111
+	}
+	instr.Opcode = rule.Opcode
+	instr.Address = parser.CurAddress
+	parser.addInstruction(instr)
+	parser.CurAddress += 2
+
+	//Remove parsed tokens from the list
+	tokens = append(tokens[:tokenpos], tokens[tokenpos+2:]...)
+	return tokens, nil
+}
+
 func addLabel(parser *Parser, token Token) error {
 	if _, ok := parser.Labels[token.Tk]; ok {
 		return fmt.Errorf("Label '%s' already defined! On address: 0x%08x", token.Tk, parser.Labels[token.Tk])
@@ -222,6 +247,7 @@ func addLabel(parser *Parser, token Token) error {
 	return nil
 }
 
+//Example: label1:
 func parseLabel(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Token, error) {
 	if err := addLabel(parser, tokens[tokenpos]); err != nil {
 		return tokens, err
@@ -231,6 +257,7 @@ func parseLabel(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Toke
 	return tokens, nil
 }
 
+//Example: myconst1 equ 0x1234
 func parseConstEqu(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Token, error) {
 	constT := tokens[tokenpos]
 	numberT := tokens[tokenpos+2]
@@ -243,7 +270,7 @@ func parseConstEqu(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]T
 	return tokens, nil
 }
 
-// $const1; example: add r1, $const1
+// Example: add r1, $const1; replace $const1 by number
 func parseEvalConst(parser *Parser, rule Rule, tokens []Token, tokenpos int) ([]Token, error) {
 	constT := tokens[tokenpos+1]
 	constVal, ok := parser.Constants[constT.Tk]
