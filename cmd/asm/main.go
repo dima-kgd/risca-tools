@@ -36,28 +36,20 @@ func main() {
 
 	parser := isa.NewParser()
 	scanner := bufio.NewScanner(ifile)
+	lineNumber := 1
 	for scanner.Scan() {
 		line := scanner.Text()
-		fmt.Print(line, "\t")
-		// tokens, err := isa.Tokenize(line)
-		// if err != nil {
-		// 	fmt.Printf("Error tokenizing: %v\n", err)
-		// 	return
-		// }
-		// for _, token := range tokens {
-		// 	fmt.Print(token, " ")
-		// }
-		// fmt.Println()
-		instruction, skip, err := parser.ParseLine(line)
+		fmt.Print(line, "\n")
+
+		skip, err := parser.ParseLine(line)
 		if skip {
-			fmt.Printf("\n")
 			continue
 		}
 		if err != nil {
-			fmt.Printf("Error parsing: %v\n", err)
+			fmt.Printf("Line: %d: %v\n", lineNumber, err)
 			return
 		}
-		fmt.Printf("0x%04X %s\n", instruction.Pack(), instruction)
+		lineNumber++
 	}
 
 	err = parser.ProcessLabels()
@@ -72,7 +64,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-
 	}
 
 	if err := scanner.Err(); err != nil {

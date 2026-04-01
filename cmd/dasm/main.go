@@ -24,14 +24,16 @@ func main() {
 	}
 	defer ifile.Close()
 
+	var curAddr uint32 = 0
 	for {
-		var instruction uint16
-		err = binary.Read(ifile, binary.LittleEndian, &instruction)
+		var instrBin uint16
+		err = binary.Read(ifile, binary.LittleEndian, &instrBin)
 		if err != nil {
 			break
 		}
-		fmt.Printf("0x%04X ", instruction)
-		i := isa.Parse(instruction)
-		fmt.Println(i)
+		instr := isa.Parse(instrBin)
+		instr.Address = curAddr
+		fmt.Printf("0x%08x 0x%04X %s\n", curAddr, instrBin, instr)
+		curAddr += 2
 	}
 }

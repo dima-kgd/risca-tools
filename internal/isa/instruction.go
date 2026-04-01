@@ -161,14 +161,14 @@ func (i Instruction) String() string {
 			case 13:
 				rdStr = "LR"
 			}
-			return fmt.Sprintf("%s %s, %s", name, rdStr, rsStr)
+			return fmt.Sprintf("%s\t%s, %s", name, rdStr, rsStr)
 		}
 	case OP_LD_REG_IMM:
 		rdBanked := i.Rd
 		if (i.Func2 & 0b0000_0010) != 0 {
 			rdBanked += 7
 		}
-		return fmt.Sprintf("LD.%d R%d, 0x%02X(%d)", i.Func2&0b0000_0001, rdBanked, uint8(i.Imm), i.Imm)
+		return fmt.Sprintf("LD.%d\tR%d, 0x%02X(%d)", i.Func2&0b0000_0001, rdBanked, uint8(i.Imm), i.Imm)
 	case OP_ALU_REG_IMM:
 		rdBanked := i.Rd
 		if (i.Func3 & 0b0000_0100) != 0 {
@@ -195,10 +195,13 @@ func (i Instruction) String() string {
 		case 3:
 			operand = "DJNZ"
 		}
-		if funcOper == 2 || funcOper == 3 {
-			return fmt.Sprintf("%s R%d, 0x%02X(%d) -> %08X", operand, rdBanked, uint8(i.Imm), i.Imm, uint32(int32(i.Address)+int32(i.Imm)))
-		} else {
-			return fmt.Sprintf("%s R%d, 0x%02X(%d)", operand, rdBanked, uint8(imm), imm)
+		switch funcOper {
+		case 2: //LDI
+			return fmt.Sprintf("%s\tR%d, 0x%02X(%d) -> %08X", operand, rdBanked, uint8(i.Imm), i.Imm, uint32(int32(i.Address)+int32((-i.Imm)<<1)))
+		case 3: //DJNZ
+			return fmt.Sprintf("%s\tR%d, 0x%02X(%d) -> %08X", operand, rdBanked, uint8(i.Imm), i.Imm, uint32(int32(i.Address)+int32(i.Imm<<1)))
+		default:
+			return fmt.Sprintf("%s\tR%d, 0x%02X(%d)", operand, rdBanked, uint8(imm), imm)
 		}
 		//TODO:
 	}
